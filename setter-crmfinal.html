@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SetterCRM — Outreach Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800;900&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a23;
+    --surface2: #1e2330;
+    --surface3: #252b3b;
+    --border: #2a3048;
+    --border2: #353d56;
+    --text: #e8ecf5;
+    --text2: #8b95b0;
+    --text3: #5a6480;
+    --accent: #4f8ef7;
+    --accent2: #7c5cf6;
+    --green: #22c97a;
+    --yellow: #f5c842;
+    --orange: #f58c42;
+    --red: #f74f4f;
+    --pink: #f74f9e;
+
+    /* State colors */
+    --frio-bg: #1e2330;
+    --frio-text: #8b95b0;
+    --contactado-bg: #1a2a4a;
+    --contactado-text: #4f8ef7;
+    --seguimiento-bg: #2a2010;
+    --seguimiento-text: #f5c842;
+    --nocalifica-bg: #2a1010;
+    --nocalifica-text: #f74f4f;
+    --cerrado-bg: #0d2a1a;
+    --cerrado-text: #22c97a;
+
+    --radius: 8px;
+    --radius2: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .logo span { color: var(--accent); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: all 0.15s;
+  }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--surface3); color: var(--text); }
+  .topnav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner {
+    background: linear-gradient(90deg, #2a1010, #2a1a10);
+    border-bottom: 1px solid #5a2020;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #f5a0a0;
+  }
+  .alert-banner.hidden { display: none; }
+  .alert-badge {
+    background: var(--red);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .alert-badge.yellow { background: var(--yellow); color: #1a1200; }
+
+  /* ── MAIN CONTENT ── */
+  .page { display: none; padding: 20px 24px; }
+  .page.active { display: block; }
+
+  /* ── DASHBOARD CARDS ── */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .dash-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dash-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .dash-card.c1::before { background: var(--accent); }
+  .dash-card.c2::before { background: var(--yellow); }
+  .dash-card.c3::before { background: var(--red); }
+  .dash-card.c4::before { background: var(--green); }
+  .dash-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .dash-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .dash-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .dash-card.c1 .dash-value { color: var(--accent); }
+  .dash-card.c2 .dash-value { color: var(--yellow); }
+  .dash-card.c3 .dash-value { color: var(--red); }
+  .dash-card.c4 .dash-value { color: var(--green); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+  .search-box input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px 8px 36px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s;
+  }
+  .search-box input:focus { border-color: var(--accent); }
+  .search-box svg {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+  }
+
+  select.filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  select.filter-select:focus { border-color: var(--accent); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #3a7ae8; }
+  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+  .btn-danger { background: #2a1010; color: var(--red); border: 1px solid #5a2020; }
+  .btn-danger:hover { background: #3a1515; }
+  .btn-success { background: #0d2a1a; color: var(--green); border: 1px solid #1a5a30; }
+  .btn-success:hover { background: #103520; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead { position: sticky; top: 0; z-index: 10; }
+  th {
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border2);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: var(--text); }
+  th .sort-arrow { margin-left: 4px; opacity: 0.5; }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    max-width: 180px;
+    overflow: hidden;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,142,247,0.04); }
+  tr.row-vencido td { background: rgba(247,79,79,0.05); }
+  tr.row-hoy td { background: rgba(245,200,66,0.05); }
+
+  .cell-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+    display: block;
+  }
+  .cell-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  .cell-link:hover { text-decoration: underline; }
+
+  /* State badges */
+  .estado-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .estado-Frío { background: var(--frio-bg); color: var(--frio-text); border: 1px solid #2a3048; }
+  .estado-Contactado { background: var(--contactado-bg); color: var(--contactado-text); border: 1px solid #1a3a6a; }
+  .estado-En\ seguimiento { background: var(--seguimiento-bg); color: var(--seguimiento-text); border: 1px solid #4a3010; }
+  .estado-No\ califica { background: var(--nocalifica-bg); color: var(--nocalifica-text); border: 1px solid #5a1010; }
+  .estado-Cerrado { background: var(--cerrado-bg); color: var(--cerrado-text); border: 1px solid #0d4a24; }
+
+  /* Days remaining */
+  .dias-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .dias-green { background: #0d2a1a; color: var(--green); }
+  .dias-yellow { background: #2a2010; color: var(--yellow); }
+  .dias-orange { background: #2a1800; color: var(--orange); }
+  .dias-red { background: #2a0a0a; color: var(--red); }
+
+  /* Note cell */
+  .nota-cell {
+    font-size: 12px;
+    color: var(--text2);
+    max-width: 240px;
+    width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    cursor: pointer;
+  }
+  .nota-cell:hover { color: var(--accent); }
+
+  /* Actions */
+  .actions-cell { display: flex; gap: 6px; align-items: center; }
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover.edit { color: var(--accent); background: rgba(79,142,247,0.1); }
+  .icon-btn:hover.del { color: var(--red); background: rgba(247,79,79,0.1); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; visibility: visible; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px;
+    width: 560px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(16px);
+    transition: transform 0.2s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-wide { width: 780px; }
+  .modal-xl { width: 960px; }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--surface3); color: var(--text); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+  }
+  input[type="text"], input[type="email"], input[type="url"],
+  input[type="date"], input[type="number"], textarea, select.form-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select.form-select:focus {
+    border-color: var(--accent);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── NOTE HISTORY MODAL ── */
+  .note-history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+  }
+  .note-entry {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+  }
+  .note-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 5px;
+  }
+  .note-text { font-size: 13px; color: var(--text2); }
+
+  /* ── HISTORIAL PAGE ── */
+  .hist-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .hist-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .month-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 120px;
+    text-align: center;
+  }
+  .month-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .month-btn:hover { background: var(--surface3); color: var(--text); }
+
+  .hist-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .hist-sum-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 16px 18px;
+    text-align: center;
+  }
+  .hist-sum-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .hist-sum-val { font-family: 'DM Sans', sans-serif; font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+  .hist-sum-card.s1 .hist-sum-val { color: var(--accent); }
+  .hist-sum-card.s2 .hist-sum-val { color: var(--green); }
+  .hist-sum-card.s3 .hist-sum-val { color: var(--yellow); }
+  .hist-sum-card.s4 .hist-sum-val { color: var(--accent2); }
+
+  .weeks-grid { display: flex; flex-direction: column; gap: 16px; }
+  .week-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+  }
+  .week-header {
+    background: var(--surface2);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .week-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .week-stats { display: flex; gap: 12px; margin-left: auto; }
+  .week-stat {
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .week-stat strong { color: var(--text); }
+  .week-toggle { color: var(--text3); font-size: 12px; }
+  .week-body { padding: 16px 18px; }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+  .day-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .day-card.future { opacity: 0.45; }
+  .day-card.today { border-color: var(--accent); }
+  .day-name {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+  }
+  .day-date { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); }
+  .day-meta { font-size: 11px; color: var(--text3); margin-top: auto; }
+  .day-progress {
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .day-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .day-inputs { display: flex; flex-direction: column; gap: 5px; }
+  .day-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .day-input-row input {
+    width: 50px;
+    padding: 3px 6px;
+    font-size: 12px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+  }
+  .day-input-row label { font-size: 10px; text-transform: none; letter-spacing: 0; }
+  .day-goal-ok { border-color: var(--green) !important; }
+  .day-goal-close { border-color: var(--yellow) !important; }
+
+  /* Progress ring on day card */
+  .day-ring-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .day-count-big {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+  .day-count-goal { font-size: 10px; color: var(--text3); }
+  .day-reuniones { font-size: 11px; color: var(--green); }
+
+  /* Bar chart for month overview */
+  .month-chart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .month-chart-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    margin-bottom: 14px;
+  }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .bar-fill {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    background: var(--accent);
+    transition: height 0.4s;
+    position: relative;
+  }
+  .bar-fill.goal-met { background: var(--green); }
+  .bar-fill.goal-close { background: var(--yellow); }
+  .bar-label { font-size: 9px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .bar-val { font-size: 9px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  /* ── IMPORT/EXPORT ── */
+  .import-step { margin-bottom: 18px; }
+  .import-step-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .drop-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); color: var(--text2); background: rgba(79,142,247,0.05); }
+  .drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+  .drop-zone-text { font-size: 13px; }
+  .map-grid { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .map-col-name { font-size: 13px; color: var(--text2); }
+  .map-arrow { color: var(--text3); text-align: center; }
+  .preview-table-wrap { max-height: 200px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  .preview-table { width: 100%; font-size: 11px; }
+  .preview-table th { background: var(--surface2); padding: 6px 8px; }
+  .preview-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .dup-option { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .dup-option input { width: auto; }
+
+  /* ── INLINE EDITING ── */
+  .editable {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .editable:hover { background: var(--surface3); }
+  .inline-input {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    width: 120px;
+  }
+
+  /* ── ADD COLUMN ── */
+  .custom-col-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .custom-col-pill .rm { cursor: pointer; color: var(--text3); font-size: 13px; }
+  .custom-col-pill .rm:hover { color: var(--red); }
+
+  /* Notion-style add row */
+  .add-row-notion td { padding: 0; border-bottom: none; }
+  .add-row-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 14px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .add-row-btn:hover { background: rgba(79,142,247,0.06); color: var(--accent); }
+
+  /* Quick-add inline row */
+  .quick-add-row td { background: rgba(79,142,247,0.04); padding: 6px 12px; }
+  .quick-add-row input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    padding: 2px 4px;
+    width: 100%;
+  }
+  .quick-add-row input:focus { border-bottom-color: var(--accent); }
+
+
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── TOOLTIP ── */
+  [data-tip] { position: relative; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface3);
+    color: var(--text);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 999;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 60px;
+    text-align: center;
+    color: var(--text3);
+  }
+  .empty-state svg { margin-bottom: 16px; opacity: 0.3; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text3);
+    border-top: 1px solid var(--border);
+  }
+  .page-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+  }
+  .page-btn:hover { background: var(--surface3); }
+  .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  @media (max-width: 1200px) {
+    .dash-grid { grid-template-columns: repeat(2, 1fr); }
+    .hist-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .days-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .days-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Reunion badge */
+  .reunion-badge {
+    display: inline-block;
+    background: rgba(34,201,122,0.15);
+    color: var(--green);
+    border: 1px solid rgba(34,201,122,0.3);
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="logo">Setter<span>CRM</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('leads')">📋 Leads</button>
+      <button class="nav-tab" onclick="showPage('historial')">📊 Historial</button>
+    </div>
+    <div class="topnav-right">
+      <button class="btn btn-ghost btn-sm" onclick="openImport()">⬆ Importar CSV/Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn btn-primary" onclick="openNewLead()">+ Nuevo lead</button>
+    </div>
+  </nav>
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner hidden" id="alertBanner">
+    <span>⚠️ Alertas del día:</span>
+    <span id="alertVencidos"></span>
+    <span id="alertHoy"></span>
+    <button class="btn btn-sm" style="margin-left:auto;background:rgba(255,255,255,0.1);color:white;border:none;" onclick="document.getElementById('alertBanner').classList.add('hidden')">✕</button>
+  </div>
+
+  <!-- LEADS PAGE -->
+  <div class="page active" id="page-leads">
+    <!-- Dashboard cards -->
+    <div class="dash-grid">
+      <div class="dash-card c1">
+        <div class="dash-label">Contactados hoy</div>
+        <div class="dash-value" id="dc-contactados">0</div>
+        <div class="dash-sub">Meta: 20 nuevos/día</div>
+      </div>
+      <div class="dash-card c2">
+        <div class="dash-label">Seguimientos hoy</div>
+        <div class="dash-value" id="dc-seguimientos">0</div>
+        <div class="dash-sub">Fecha próxima = hoy</div>
+      </div>
+      <div class="dash-card c3">
+        <div class="dash-label">Leads vencidos</div>
+        <div class="dash-value" id="dc-vencidos">0</div>
+        <div class="dash-sub">Sin acción pendiente</div>
+      </div>
+      <div class="dash-card c4">
+        <div class="dash-label">Leads activos</div>
+        <div class="dash-value" id="dc-activos">0</div>
+        <div class="dash-sub">Total en CRM</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Buscar por nombre, negocio, correo..." oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="filterEstado" onchange="renderTable()">
+        <option value="">Todos los estados</option>
+        <option value="Frío">Frío</option>
+        <option value="Contactado">Contactado</option>
+        <option value="En seguimiento">En seguimiento</option>
+        <option value="No califica">No califica</option>
+        <option value="Cerrado">Cerrado</option>
+      </select>
+      <select class="filter-select" id="filterDias" onchange="renderTable()">
+        <option value="todos">Todos</option>
+        <option value="vencidos">Vencidos</option>
+        <option value="hoy">Hoy</option>
+        <option value="semana">Esta semana</option>
+      </select>
+      <select class="filter-select" id="sortBy" onchange="renderTable()">
+        <option value="default">Orden: predeterminado</option>
+        <option value="dias">Días restantes</option>
+        <option value="nota">Última nota</option>
+        <option value="nombre">Nombre</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="openAddColumn()">⊞ Añadir columna</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" id="tableWrap">
+      <table id="leadsTable">
+        <thead>
+          <tr id="tableHead">
+            <th>Nombre</th>
+            <th>Negocio</th>
+            <th>Web</th>
+            <th>Número</th>
+            <th>Correo</th>
+            <th>Estado</th>
+            <th>Próxima Acción</th>
+            <th>Días Rest.</th>
+            <th>Última Nota</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody"></tbody>
+      </table>
+      <div class="pagination" id="paginationBar"></div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL PAGE -->
+  <div class="page" id="page-historial">
+    <div class="hist-header">
+      <div class="hist-title">📊 Historial de Outreach</div>
+      <div style="font-size:13px;color:var(--text3)">Meta diaria: <strong style="color:var(--text)">100 contactos</strong></div>
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button class="month-btn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <!-- Month summary cards -->
+    <div class="hist-summary-grid">
+      <div class="hist-sum-card s1">
+        <div class="hist-sum-label">Total Contactos</div>
+        <div class="hist-sum-val" id="hs-total">0</div>
+      </div>
+      <div class="hist-sum-card s2">
+        <div class="hist-sum-label">Reuniones agendadas</div>
+        <div class="hist-sum-val" id="hs-reuniones">0</div>
+      </div>
+      <div class="hist-sum-card s3">
+        <div class="hist-sum-label">Días activos</div>
+        <div class="hist-sum-val" id="hs-dias">0</div>
+      </div>
+      <div class="hist-sum-card s4">
+        <div class="hist-sum-label">Tasa de conversión</div>
+        <div class="hist-sum-val" id="hs-tasa">0%</div>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="month-chart">
+      <div class="month-chart-title">Contactos por día (vs meta 100)</div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+
+    <!-- Weeks -->
+    <div class="weeks-grid" id="weeksGrid"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════
+     MODALS
+══════════════════════════ -->
+
+<!-- New/Edit Lead Modal -->
+<div class="modal-overlay" id="leadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="leadModalTitle">+ Nuevo Lead</div>
+      <button class="modal-close" onclick="closeModal('leadModal')">×</button>
+    </div>
+    <div class="form-grid" id="leadForm">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="f-nombre" placeholder="Ej: Juan García">
+      </div>
+      <div class="form-group">
+        <label>Negocio</label>
+        <input type="text" id="f-negocio" placeholder="Ej: Fisioterapia XYZ">
+      </div>
+      <div class="form-group">
+        <label>Web</label>
+        <input type="url" id="f-web" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>Número *</label>
+        <input type="text" id="f-numero" placeholder="987 654 321">
+      </div>
+      <div class="form-group">
+        <label>Correo</label>
+        <input type="email" id="f-correo" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Estado *</label>
+        <select class="form-select" id="f-estado">
+          <option value="Frío">Frío</option>
+          <option value="Contactado">Contactado</option>
+          <option value="En seguimiento">En seguimiento</option>
+          <option value="No califica">No califica</option>
+          <option value="Cerrado">Cerrado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha próxima acción</label>
+        <input type="date" id="f-fecha">
+      </div>
+      <div class="form-group full">
+        <label>Nota inicial</label>
+        <textarea id="f-nota" placeholder="Anotaciones sobre este lead..."></textarea>
+      </div>
+      <div id="customFieldsForm"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('leadModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLead()">Guardar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Note History Modal -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-title" id="noteModalTitle">📝 Historial de Notas</div>
+      <button class="modal-close" onclick="closeModal('noteModal')">×</button>
+    </div>
+    <div class="note-history" id="noteHistory"></div>
+    <div>
+      <label style="display:block;margin-bottom:6px">Agregar nueva nota</label>
+      <textarea id="newNoteInput" placeholder="Escribe una nueva nota..." style="min-height:80px;width:100%"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('noteModal')">Cerrar</button>
+      <button class="btn btn-primary" onclick="saveNote()">Agregar nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Column Modal -->
+<div class="modal-overlay" id="colModal">
+  <div class="modal" style="width:400px">
+    <div class="modal-header">
+      <div class="modal-title">⊞ Añadir columna</div>
+      <button class="modal-close" onclick="closeModal('colModal')">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Nombre de columna</label>
+      <input type="text" id="col-name" placeholder="Ej: Fuente, Prioridad...">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Tipo</label>
+      <select class="form-select" id="col-type" onchange="toggleColOptions()">
+        <option value="text">Texto</option>
+        <option value="number">Número</option>
+        <option value="dropdown">Dropdown</option>
+      </select>
+    </div>
+    <div class="form-group" id="col-options-group" style="display:none;margin-bottom:14px">
+      <label>Opciones (separadas por coma)</label>
+      <input type="text" id="col-options" placeholder="Opción1, Opción2, Opción3">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('colModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addColumn()">Crear columna</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <div class="modal-title">⬆ Importar CSV / Excel</div>
+      <button class="modal-close" onclick="closeModal('importModal')">×</button>
+    </div>
+    <div id="importStep1">
+      <div class="import-step">
+        <div class="import-step-title">Paso 1 — Sube tu archivo</div>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+          <div class="drop-zone-icon">📂</div>
+          <div class="drop-zone-text">Arrastra aquí tu archivo .csv o .xlsx<br><small>o haz clic para buscar</small></div>
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(event)">
+        </div>
+      </div>
+    </div>
+    <div id="importStep2" style="display:none">
+      <div class="import-step">
+        <div class="import-step-title">Paso 2 — Mapeo de columnas</div>
+        <div id="mappingGrid"></div>
+      </div>
+      <div class="import-step">
+        <div class="import-step-title">Paso 3 — Vista previa (primeras 5 filas)</div>
+        <div class="preview-table-wrap"><table class="preview-table" id="previewTable"></table></div>
+      </div>
+      <div class="import-step">
+        <div class="import-step-title">Duplicados (mismo nombre + número)</div>
+        <label class="dup-option"><input type="radio" name="dupMode" value="skip" checked> Ignorar duplicados</label>
+        <label class="dup-option"><input type="radio" name="dupMode" value="replace"> Reemplazar duplicados</label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('importStep2').style.display='none';document.getElementById('importStep1').style.display='block'">← Atrás</button>
+        <button class="btn btn-primary" onclick="confirmImport()">✓ Confirmar importación</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA MODEL & PERSISTENCE
+// ═══════════════════════════════════════════════
+let leads = [];
+let customCols = [];
+let historialData = {}; // { "2026-05": { "2026-05-01": { contactos: 20, reuniones: 3 } } }
+let editingLeadId = null;
+let noteLeadId = null;
+let importRows = [];
+let importMapping = {};
+let currentPage = 1;
+const PAGE_SIZE = 50;
+let currentMonth = new Date();
+
+const APP_STATES = ['Frío','Contactado','En seguimiento','No califica','Cerrado'];
+const APP_FIELDS = ['nombre','negocio','web','numero','correo','estado','fechaAccion','notas'];
+
+function save() {
+  localStorage.setItem('setter_leads', JSON.stringify(leads));
+  localStorage.setItem('setter_cols', JSON.stringify(customCols));
+  localStorage.setItem('setter_historial', JSON.stringify(historialData));
+}
+function load() {
+  try { leads = JSON.parse(localStorage.getItem('setter_leads')) || []; } catch { leads = []; }
+  try { customCols = JSON.parse(localStorage.getItem('setter_cols')) || []; } catch { customCols = []; }
+  try { historialData = JSON.parse(localStorage.getItem('setter_historial')) || {}; } catch { historialData = {}; }
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function daysRemaining(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+
+// ═══════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'leads') { renderTable(); updateDashboard(); }
+  if (id === 'historial') { renderHistorial(); }
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function updateDashboard() {
+  const today = todayStr();
+  let contactadosHoy = 0, seguimientosHoy = 0, vencidos = 0;
+
+  leads.forEach(l => {
+    if (l.estado === 'Contactado') {
+      const lastNoteDate = l.notas && l.notas.length ? l.notas[l.notas.length-1].fecha.slice(0,10) : null;
+      if (lastNoteDate === today || l.updatedAt === today) contactadosHoy++;
+    }
+    if (l.fechaAccion === today) seguimientosHoy++;
+    const dr = daysRemaining(l.fechaAccion);
+    if (dr !== null && dr < 0) vencidos++;
+  });
+
+  document.getElementById('dc-contactados').textContent = contactadosHoy;
+  document.getElementById('dc-seguimientos').textContent = seguimientosHoy;
+  document.getElementById('dc-vencidos').textContent = vencidos;
+  document.getElementById('dc-activos').textContent = leads.length;
+
+  // Alert banner
+  const banner = document.getElementById('alertBanner');
+  if (vencidos > 0 || seguimientosHoy > 0) {
+    banner.classList.remove('hidden');
+    document.getElementById('alertVencidos').innerHTML = vencidos > 0 ? `<span class="alert-badge">${vencidos} vencidos</span>` : '';
+    document.getElementById('alertHoy').innerHTML = seguimientosHoy > 0 ? `<span class="alert-badge yellow">${seguimientosHoy} para hoy</span>` : '';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// TABLE RENDER
+// ═══════════════════════════════════════════════
+function getFilteredLeads() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const fEstado = document.getElementById('filterEstado').value;
+  const fDias = document.getElementById('filterDias').value;
+  const sortBy = document.getElementById('sortBy').value;
+
+  let data = [...leads];
+
+  if (q) data = data.filter(l =>
+    (l.nombre||'').toLowerCase().includes(q) ||
+    (l.negocio||'').toLowerCase().includes(q) ||
+    (l.correo||'').toLowerCase().includes(q)
+  );
+  if (fEstado) data = data.filter(l => l.estado === fEstado);
+  if (fDias !== 'todos') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    data = data.filter(l => {
+      const dr = daysRemaining(l.fechaAccion);
+      if (fDias === 'vencidos') return dr !== null && dr < 0;
+      if (fDias === 'hoy') return dr === 0;
+      if (fDias === 'semana') return dr !== null && dr >= 0 && dr <= 7;
+      return true;
+    });
+  }
+
+  if (sortBy === 'dias') data.sort((a,b) => {
+    const da = daysRemaining(a.fechaAccion) ?? 9999;
+    const db = daysRemaining(b.fechaAccion) ?? 9999;
+    return da - db;
+  });
+  else if (sortBy === 'nota') data.sort((a,b) => {
+    const na = a.notas?.length ? a.notas[a.notas.length-1].fecha : '';
+    const nb = b.notas?.length ? b.notas[b.notas.length-1].fecha : '';
+    return nb.localeCompare(na);
+  });
+  else if (sortBy === 'nombre') data.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+  return data;
+}
+
+function renderTable() {
+  const data = getFilteredLeads();
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const pageData = data.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  // Render header custom cols
+  const head = document.getElementById('tableHead');
+  // Remove old custom col headers
+  head.querySelectorAll('.custom-col-th').forEach(e => e.remove());
+  const actTh = head.querySelector('th:last-child');
+  customCols.forEach(col => {
+    const th = document.createElement('th');
+    th.className = 'custom-col-th';
+    th.textContent = col.name;
+    head.insertBefore(th, actTh);
+  });
+
+  const tbody = document.getElementById('leadsBody');
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${10 + customCols.length}">
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <div class="empty-title">No hay leads</div>
+        <div>Agrega tu primer lead con el botón "+ Nuevo lead"</div>
+      </div>
+    </td></tr>
+    <tr class="add-row-notion"><td colspan="${10 + customCols.length}"><button onclick="quickAddRow()" class="add-row-btn">＋ Nuevo lead</button></td></tr>`;
+  } else {
+    tbody.innerHTML = pageData.map(lead => renderRow(lead)).join('') +
+      `<tr class="add-row-notion"><td colspan="${10 + customCols.length}"><button onclick="quickAddRow()" class="add-row-btn">＋ Nuevo lead</button></td></tr>`;
+  }
+
+  // Pagination
+  const pag = document.getElementById('paginationBar');
+  if (totalPages <= 1) { pag.innerHTML = `<span>Mostrando ${data.length} leads</span>`; return; }
+  let pagHtml = `<span>Mostrando ${(currentPage-1)*PAGE_SIZE+1}–${Math.min(currentPage*PAGE_SIZE, data.length)} de ${data.length}</span>`;
+  pagHtml += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (totalPages <= 7 || i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+      pagHtml += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (Math.abs(i - currentPage) === 2) { pagHtml += `<span>…</span>`; }
+  }
+  pagHtml += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  pag.innerHTML = pagHtml;
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+
+function renderRow(lead) {
+  const dr = daysRemaining(lead.fechaAccion);
+  let rowClass = '';
+  if (dr !== null && dr < 0) rowClass = 'row-vencido';
+  else if (dr === 0) rowClass = 'row-hoy';
+
+  const diasBadge = dr === null ? '' : (() => {
+    let cls = dr >= 7 ? 'dias-green' : dr >= 3 ? 'dias-yellow' : dr >= 1 ? 'dias-orange' : 'dias-red';
+    let txt = dr < 0 ? `${Math.abs(dr)}d` : dr === 0 ? 'hoy' : `${dr}d`;
+    return `<span class="dias-badge ${cls}">${txt}</span>`;
+  })();
+
+  const estadoClass = 'estado-' + (lead.estado || 'Frío').replace(' ', '\\ ');
+  const lastNote = lead.notas && lead.notas.length ? lead.notas[lead.notas.length-1].text : '';
+
+  const customCellsHtml = customCols.map(col => {
+    const val = (lead.custom || {})[col.id] || '';
+    return `<td>
+      <span class="editable cell-text" onclick="inlineEditCustom('${lead.id}','${col.id}',this,'${col.type}')" title="${val}">${val}</span>
+    </td>`;
+  }).join('');
+
+  return `<tr class="${rowClass}" id="row-${lead.id}">
+    <td><span class="cell-text editable" onclick="inlineEdit('${lead.id}','nombre',this)" title="${esc(lead.nombre)}">${esc(lead.nombre) || '<span style="color:var(--text3)">Nombre...</span>'}</span></td>
+    <td><span class="cell-text editable" onclick="inlineEdit('${lead.id}','negocio',this)" title="${esc(lead.negocio)}">${esc(lead.negocio) || '<span style="color:var(--text3)">Negocio...</span>'}</span></td>
+    <td><span class="cell-text editable" onclick="inlineEditUrl('${lead.id}',this)" title="${esc(lead.web)}">${lead.web ? '<a href="' + esc(lead.web) + '" target="_blank" class="cell-link" onclick="event.stopPropagation()">🔗 link</a>' : '<span style="color:var(--text3)">URL...</span>'}</span></td>
+    <td><span class="cell-text editable" onclick="inlineEdit('${lead.id}','numero',this)" title="${esc(lead.numero)}">${esc(lead.numero) || '<span style="color:var(--text3)">Número...</span>'}</span></td>
+    <td><span class="cell-text editable" onclick="inlineEdit('${lead.id}','correo',this)" style="max-width:130px" title="${esc(lead.correo)}">${esc(lead.correo) || '<span style="color:var(--text3)">Correo...</span>'}</span></td>
+    <td>
+      <select class="estado-badge estado-${esc(lead.estado)}" onchange="changeEstado('${lead.id}',this.value)" style="border:none;cursor:pointer;appearance:none;font-family:inherit">
+        ${APP_STATES.map(s => `<option value="${s}" ${lead.estado===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <input type="date" value="${lead.fechaAccion||''}" style="background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:2px 6px;font-family:'DM Mono',monospace;" onchange="changeDate('${lead.id}',this.value)">
+    </td>
+    <td>${diasBadge}</td>
+    <td style="max-width:240px;overflow:hidden">
+      <span class="nota-cell" onclick="openNotes('${lead.id}')" title="${esc(lastNote)}">${esc(lastNote) || '<span style="color:var(--text3);font-style:italic">Sin notas</span>'}</span>
+    </td>
+    ${customCellsHtml}
+    <td>
+      <div class="actions-cell">
+        <button class="icon-btn edit" onclick="editLead('${lead.id}')" data-tip="Editar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn del" onclick="deleteLead('${lead.id}')" data-tip="Eliminar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        </button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════
+// INLINE EDITING
+// ═══════════════════════════════════════════════
+function inlineEdit(id, field, el) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  const val = lead[field] || '';
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = val; input.className = 'inline-input';
+  el.replaceWith(input); input.focus();
+  const save2 = () => {
+    lead[field] = input.value;
+    save(); renderTable();
+  };
+  input.addEventListener('blur', save2);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') save2(); if (e.key === 'Escape') renderTable(); });
+}
+
+function quickAddRow() {
+  // Replace the add-row button with an inline editable row
+  const tbody = document.getElementById('leadsBody');
+  const cols = 10 + customCols.length;
+  const tempId = 'qa-' + Date.now();
+  const newRow = document.createElement('tr');
+  newRow.className = 'quick-add-row';
+  newRow.id = tempId;
+
+  // Cols: nombre | negocio | web | numero | correo | estado | fecha | dias | nota | acciones
+  newRow.innerHTML = `
+    <td><input type="text" id="qa-nombre" placeholder="Nombre *" autofocus></td>
+    <td><input type="text" id="qa-negocio" placeholder="Negocio"></td>
+    <td><input type="text" id="qa-web" placeholder="https://..."></td>
+    <td><input type="text" id="qa-numero" placeholder="Número"></td>
+    <td><input type="text" id="qa-correo" placeholder="Correo"></td>
+    <td>
+      <select id="qa-estado" class="estado-badge estado-Frío" style="border:none;appearance:none;font-family:inherit;font-size:11px;background:var(--frio-bg);color:var(--frio-text);padding:3px 8px;border-radius:20px;cursor:pointer">
+        ${APP_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+      </select>
+    </td>
+    <td><input type="date" id="qa-fecha" style="background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:2px 6px;font-family:'DM Mono',monospace;"></td>
+    <td></td>
+    <td></td>
+    ${customCols.map(() => '<td></td>').join('')}
+    <td>
+      <div class="actions-cell">
+        <button class="btn btn-primary btn-sm" onclick="confirmQuickAdd()">✓</button>
+        <button class="btn btn-ghost btn-sm" onclick="renderTable()">✕</button>
+      </div>
+    </td>
+  `;
+
+  // Remove existing add-row-notion, insert inline row
+  tbody.querySelectorAll('.add-row-notion').forEach(r => r.remove());
+  tbody.appendChild(newRow);
+  document.getElementById('qa-nombre').focus();
+
+  // Enter key moves to next field or saves
+  newRow.querySelectorAll('input').forEach((inp, i, all) => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Tab') { e.preventDefault(); if (all[i+1]) all[i+1].focus(); }
+      if (e.key === 'Enter') confirmQuickAdd();
+      if (e.key === 'Escape') renderTable();
+    });
+  });
+}
+
+function confirmQuickAdd() {
+  const nombre = (document.getElementById('qa-nombre')?.value || '').trim();
+  if (!nombre) { document.getElementById('qa-nombre')?.focus(); return; }
+  const nowStr = new Date().toLocaleString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const newLead = {
+    id: uid(), nombre,
+    negocio: (document.getElementById('qa-negocio')?.value || '').trim(),
+    web: (document.getElementById('qa-web')?.value || '').trim(),
+    numero: (document.getElementById('qa-numero')?.value || '').trim(),
+    correo: (document.getElementById('qa-correo')?.value || '').trim(),
+    estado: document.getElementById('qa-estado')?.value || 'Frío',
+    fechaAccion: document.getElementById('qa-fecha')?.value || '',
+    notas: [], createdAt: todayStr(), updatedAt: todayStr(), custom: {}
+  };
+  leads.unshift(newLead);
+  save(); renderTable(); updateDashboard();
+}
+
+function inlineEditUrl(id, el) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  const val = lead.web || '';
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = val; input.className = 'inline-input';
+  input.placeholder = 'https://...';
+  el.replaceWith(input); input.focus();
+  const save2 = () => { lead.web = input.value.trim(); save(); renderTable(); };
+  input.addEventListener('blur', save2);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') save2(); if (e.key === 'Escape') renderTable(); });
+}
+
+
+function inlineEditCustom(id, colId, el, type) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  if (!lead.custom) lead.custom = {};
+  const val = lead.custom[colId] || '';
+  const input = document.createElement('input');
+  input.type = type === 'number' ? 'number' : 'text';
+  input.value = val; input.className = 'inline-input';
+  el.replaceWith(input); input.focus();
+  const save2 = () => { lead.custom[colId] = input.value; save(); renderTable(); };
+  input.addEventListener('blur', save2);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') save2(); if (e.key === 'Escape') renderTable(); });
+}
+
+function changeEstado(id, val) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) { lead.estado = val; lead.updatedAt = todayStr(); save(); updateDashboard(); renderTable(); }
+}
+
+function changeDate(id, val) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) { lead.fechaAccion = val; save(); renderTable(); updateDashboard(); }
+}
+
+// ═══════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════
+// LEAD CRUD
+// ═══════════════════════════════════════════════
+function openNewLead() {
+  editingLeadId = null;
+  document.getElementById('leadModalTitle').textContent = '+ Nuevo Lead';
+  ['nombre','negocio','web','numero','correo','nota'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-estado').value = 'Frío';
+  document.getElementById('f-fecha').value = '';
+  renderCustomFieldsForm(null);
+  openModal('leadModal');
+  document.getElementById('f-nombre').focus();
+}
+
+function editLead(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  editingLeadId = id;
+  document.getElementById('leadModalTitle').textContent = '✏️ Editar Lead';
+  document.getElementById('f-nombre').value = lead.nombre || '';
+  document.getElementById('f-negocio').value = lead.negocio || '';
+  document.getElementById('f-web').value = lead.web || '';
+  document.getElementById('f-numero').value = lead.numero || '';
+  document.getElementById('f-correo').value = lead.correo || '';
+  document.getElementById('f-estado').value = lead.estado || 'Frío';
+  document.getElementById('f-fecha').value = lead.fechaAccion || '';
+  document.getElementById('f-nota').value = '';
+  renderCustomFieldsForm(lead);
+  openModal('leadModal');
+}
+
+function renderCustomFieldsForm(lead) {
+  const container = document.getElementById('customFieldsForm');
+  if (!customCols.length) { container.innerHTML = ''; return; }
+  container.innerHTML = customCols.map(col => {
+    const val = lead && lead.custom ? (lead.custom[col.id] || '') : '';
+    let input;
+    if (col.type === 'dropdown') {
+      input = `<select class="form-select" id="cf-${col.id}">
+        ${col.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (col.type === 'number') {
+      input = `<input type="number" id="cf-${col.id}" value="${esc(val)}">`;
+    } else {
+      input = `<input type="text" id="cf-${col.id}" value="${esc(val)}">`;
+    }
+    return `<div class="form-group"><label>${esc(col.name)}</label>${input}</div>`;
+  }).join('');
+}
+
+function saveLead() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const numero = document.getElementById('f-numero').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio'); return; }
+
+  const nota = document.getElementById('f-nota').value.trim();
+  const nowStr = new Date().toLocaleString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  if (editingLeadId) {
+    const lead = leads.find(l => l.id === editingLeadId);
+    if (lead) {
+      lead.nombre = nombre;
+      lead.negocio = document.getElementById('f-negocio').value.trim();
+      lead.web = document.getElementById('f-web').value.trim();
+      lead.numero = numero;
+      lead.correo = document.getElementById('f-correo').value.trim();
+      lead.estado = document.getElementById('f-estado').value;
+      lead.fechaAccion = document.getElementById('f-fecha').value;
+      lead.updatedAt = todayStr();
+      if (nota) lead.notas = [...(lead.notas||[]), { fecha: nowStr, text: nota }];
+      customCols.forEach(col => {
+        if (!lead.custom) lead.custom = {};
+        const el = document.getElementById('cf-'+col.id);
+        if (el) lead.custom[col.id] = el.value;
+      });
+    }
+  } else {
+    const newLead = {
+      id: uid(),
+      nombre,
+      negocio: document.getElementById('f-negocio').value.trim(),
+      web: document.getElementById('f-web').value.trim(),
+      numero,
+      correo: document.getElementById('f-correo').value.trim(),
+      estado: document.getElementById('f-estado').value,
+      fechaAccion: document.getElementById('f-fecha').value,
+      notas: nota ? [{ fecha: nowStr, text: nota }] : [],
+      createdAt: todayStr(),
+      updatedAt: todayStr(),
+      custom: {}
+    };
+    customCols.forEach(col => {
+      const el = document.getElementById('cf-'+col.id);
+      if (el) newLead.custom[col.id] = el.value;
+    });
+    leads.unshift(newLead);
+  }
+
+  save(); closeModal('leadModal'); renderTable(); updateDashboard();
+}
+
+function deleteLead(id) {
+  if (!confirm('¿Eliminar este lead?')) return;
+  leads = leads.filter(l => l.id !== id);
+  save(); renderTable(); updateDashboard();
+}
+
+// ═══════════════════════════════════════════════
+// NOTES
+// ═══════════════════════════════════════════════
+function openNotes(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  noteLeadId = id;
+  document.getElementById('noteModalTitle').textContent = `📝 Notas — ${lead.nombre}`;
+  document.getElementById('newNoteInput').value = '';
+  renderNoteHistory(lead);
+  openModal('noteModal');
+}
+
+function renderNoteHistory(lead) {
+  const hist = document.getElementById('noteHistory');
+  const notes = lead.notas || [];
+  if (!notes.length) {
+    hist.innerHTML = '<div style="color:var(--text3);font-style:italic;padding:12px">Sin notas aún.</div>';
+    return;
+  }
+  hist.innerHTML = [...notes].reverse().map(n => `
+    <div class="note-entry">
+      <div class="note-meta">🕐 ${n.fecha}</div>
+      <div class="note-text">${esc(n.text)}</div>
+    </div>
+  `).join('');
+}
+
+function saveNote() {
+  const text = document.getElementById('newNoteInput').value.trim();
+  if (!text) return;
+  const lead = leads.find(l => l.id === noteLeadId);
+  if (!lead) return;
+  const nowStr = new Date().toLocaleString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  if (!lead.notas) lead.notas = [];
+  lead.notas.push({ fecha: nowStr, text });
+  lead.updatedAt = todayStr();
+  save();
+  renderNoteHistory(lead);
+  document.getElementById('newNoteInput').value = '';
+  renderTable();
+}
+
+// ═══════════════════════════════════════════════
+// CUSTOM COLUMNS
+// ═══════════════════════════════════════════════
+function openAddColumn() { openModal('colModal'); document.getElementById('col-name').value = ''; }
+
+function toggleColOptions() {
+  const type = document.getElementById('col-type').value;
+  document.getElementById('col-options-group').style.display = type === 'dropdown' ? 'flex' : 'none';
+}
+
+function addColumn() {
+  const name = document.getElementById('col-name').value.trim();
+  if (!name) { alert('Ingresa un nombre para la columna'); return; }
+  const type = document.getElementById('col-type').value;
+  const options = type === 'dropdown' ? document.getElementById('col-options').value.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  customCols.push({ id: uid(), name, type, options });
+  save(); closeModal('colModal'); renderTable();
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════
+function exportCSV() {
+  const data = getFilteredLeads();
+  const headers = ['Nombre','Negocio','Web','Número','Correo','Estado','Fecha Próxima Acción','Días Restantes','Última Nota', ...customCols.map(c=>c.name)];
+  const rows = data.map(l => {
+    const dr = daysRemaining(l.fechaAccion);
+    const lastNote = l.notas && l.notas.length ? l.notas[l.notas.length-1].text : '';
+    const base = [l.nombre,l.negocio,l.web,l.numero,l.correo,l.estado,l.fechaAccion,dr===null?'':dr,lastNote];
+    const custom = customCols.map(c => (l.custom||{})[c.id]||'');
+    return [...base,...custom];
+  });
+  const csv = [headers,...rows].map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `leads_${todayStr()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════
+// IMPORT
+// ═══════════════════════════════════════════════
+function openImport() {
+  document.getElementById('importStep1').style.display = 'block';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  openModal('importModal');
+}
+
+function dragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function dragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) { const file = e.target.files[0]; if (file) processFile(file); }
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (!rows.length) { alert('Archivo vacío'); return; }
+      importRows = rows;
+      setupMapping();
+    } catch(err) { alert('Error al leer el archivo: '+err.message); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+const TARGET_FIELDS = [
+  {key:'nombre',label:'Nombre'},{key:'negocio',label:'Negocio'},{key:'web',label:'Web'},
+  {key:'numero',label:'Número'},{key:'correo',label:'Correo'},{key:'estado',label:'Estado'},
+  {key:'fechaAccion',label:'Fecha Próxima Acción'},{key:'nota',label:'Nota'}
+];
+
+function setupMapping() {
+  const headers = importRows[0];
+  importMapping = {};
+
+  // Auto-map similar names
+  const autoMap = {};
+  const normalize = s => (s||'').toLowerCase().replace(/[^a-z]/g,'');
+  headers.forEach((h,i) => {
+    const hn = normalize(h);
+    TARGET_FIELDS.forEach(tf => {
+      if (normalize(tf.label).includes(hn) || hn.includes(normalize(tf.label))) {
+        if (!autoMap[tf.key]) autoMap[tf.key] = i;
+      }
+    });
+    // Direct matches
+    if (hn.includes('nombre') || hn.includes('name')) autoMap.nombre = i;
+    if (hn.includes('negocio') || hn.includes('empresa') || hn.includes('company')) autoMap.negocio = i;
+    if (hn.includes('web') || hn.includes('url') || hn.includes('sitio')) autoMap.web = i;
+    if (hn.includes('numero') || hn.includes('telefono') || hn.includes('phone') || hn.includes('cel')) autoMap.numero = i;
+    if (hn.includes('correo') || hn.includes('email') || hn.includes('mail')) autoMap.correo = i;
+    if (hn.includes('estado') || hn.includes('status')) autoMap.estado = i;
+    if (hn.includes('nota') || hn.includes('note') || hn.includes('comment')) autoMap.nota = i;
+  });
+
+  let html = '<div style="display:grid;gap:8px;">';
+  TARGET_FIELDS.forEach(tf => {
+    const sel = `<select class="form-select" id="map-${tf.key}" style="font-size:12px">
+      <option value="">-- No importar --</option>
+      ${headers.map((h,i) => `<option value="${i}" ${autoMap[tf.key]===i?'selected':''}>${h||'(col '+i+')'}</option>`).join('')}
+    </select>`;
+    html += `<div class="map-grid"><div class="map-col-name">${tf.label}</div><div class="map-arrow">→</div>${sel}</div>`;
+  });
+  html += '</div>';
+
+  document.getElementById('mappingGrid').innerHTML = html;
+
+  // Preview
+  const previewRows = importRows.slice(1,6);
+  let thtml = `<thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>`;
+  thtml += previewRows.map(r=>`<tr>${r.map(c=>`<td>${esc(String(c))}</td>`).join('')}</tr>`).join('');
+  thtml += '</tbody>';
+  document.getElementById('previewTable').innerHTML = thtml;
+
+  document.getElementById('importStep1').style.display = 'none';
+  document.getElementById('importStep2').style.display = 'block';
+}
+
+function confirmImport() {
+  const dupMode = document.querySelector('input[name="dupMode"]:checked').value;
+  const rows = importRows.slice(1).filter(r => r.some(c => c !== ''));
+  const nowStr = new Date().toLocaleString('es-PE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  let added = 0, replaced = 0, skipped = 0;
+
+  rows.forEach(row => {
+    const g = key => {
+      const idx = parseInt(document.getElementById('map-'+key)?.value);
+      return isNaN(idx) ? '' : String(row[idx]||'').trim();
+    };
+
+    const nombre = g('nombre'); const numero = g('numero');
+    const nota = g('nota');
+    const newLead = {
+      id: uid(),
+      nombre, negocio: g('negocio'), web: g('web'), numero, correo: g('correo'),
+      estado: APP_STATES.includes(g('estado')) ? g('estado') : 'Frío',
+      fechaAccion: g('fechaAccion'),
+      notas: nota ? [{ fecha: nowStr, text: nota }] : [],
+      createdAt: todayStr(), updatedAt: todayStr(), custom: {}
+    };
+
+    const dupIdx = leads.findIndex(l => l.nombre === nombre && l.numero === numero && nombre);
+    if (dupIdx >= 0) {
+      if (dupMode === 'replace') { leads[dupIdx] = {...leads[dupIdx],...newLead,id:leads[dupIdx].id}; replaced++; }
+      else skipped++;
+    } else { leads.push(newLead); added++; }
+  });
+
+  save(); closeModal('importModal'); renderTable(); updateDashboard();
+  alert(`Importación completa:\n✓ Agregados: ${added}\n↻ Reemplazados: ${replaced}\n⊘ Ignorados: ${skipped}`);
+}
+
+// ═══════════════════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════════════════
+function changeMonth(delta) {
+  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1);
+  renderHistorial();
+}
+
+function getMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function getHistEntry(dateKey) {
+  const mk = dateKey.slice(0,7);
+  if (!historialData[mk]) historialData[mk] = {};
+  if (!historialData[mk][dateKey]) historialData[mk][dateKey] = { contactos: 0, reuniones: 0 };
+  return historialData[mk][dateKey];
+}
+
+function saveHistEntry(dateKey, field, value) {
+  const entry = getHistEntry(dateKey);
+  entry[field] = parseInt(value) || 0;
+  save();
+  renderHistorialSummary();
+  renderBarChart();
+}
+
+function renderHistorial() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('monthLabel').textContent = `${monthNames[month]} ${year}`;
+
+  renderHistorialSummary();
+  renderBarChart();
+  renderWeeks();
+}
+
+function renderHistorialSummary() {
+  const mk = getMonthKey(currentMonth);
+  const data = historialData[mk] || {};
+  let total = 0, reuniones = 0, diasActivos = 0;
+  Object.values(data).forEach(d => {
+    total += d.contactos || 0;
+    reuniones += d.reuniones || 0;
+    if (d.contactos > 0) diasActivos++;
+  });
+  document.getElementById('hs-total').textContent = total;
+  document.getElementById('hs-reuniones').textContent = reuniones;
+  document.getElementById('hs-dias').textContent = diasActivos;
+  document.getElementById('hs-tasa').textContent = total > 0 ? ((reuniones/total)*100).toFixed(1)+'%' : '0%';
+}
+
+function renderBarChart() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const mk = getMonthKey(currentMonth);
+  const data = historialData[mk] || {};
+  const today = new Date();
+
+  const chart = document.getElementById('barChart');
+  let html = '';
+  const maxVal = Math.max(100, ...Object.values(data).map(d => d.contactos || 0));
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dk = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entry = data[dk] || { contactos: 0 };
+    const c = entry.contactos || 0;
+    const pct = Math.round((c / maxVal) * 100);
+    const dayDate = new Date(year, month, d);
+    const dayName = ['D','L','M','X','J','V','S'][dayDate.getDay()];
+    let fillClass = c >= 100 ? 'goal-met' : c >= 70 ? 'goal-close' : '';
+    html += `<div class="bar-col">
+      <div class="bar-val">${c||''}</div>
+      <div class="bar-fill ${fillClass}" style="height:${pct}%"></div>
+      <div class="bar-label">${dayName}${d}</div>
+    </div>`;
+  }
+  chart.innerHTML = html;
+}
+
+function renderWeeks() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const mk = getMonthKey(currentMonth);
+  const data = historialData[mk] || {};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = getDateKey(today);
+  const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  // Build weeks (each starting Monday)
+  let weeks = [];
+  let week = [];
+
+  // Find first Monday on or before day 1
+  const firstDay = new Date(year, month, 1);
+  let weekStart = new Date(firstDay);
+  // Adjust to Monday
+  const dow = weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - (dow === 0 ? 6 : dow - 1));
+
+  let current = new Date(weekStart);
+  let weekNum = 0;
+  while (current <= new Date(year, month, daysInMonth)) {
+    week = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    weeks.push(week);
+    weekNum++;
+  }
+
+  const container = document.getElementById('weeksGrid');
+  container.innerHTML = weeks.map((wdays, wi) => {
+    const weekContactos = wdays.reduce((sum, d) => {
+      if (d.getMonth() !== month) return sum;
+      const dk = getDateKey(d);
+      return sum + ((data[dk]||{}).contactos || 0);
+    }, 0);
+    const weekReuniones = wdays.reduce((sum, d) => {
+      if (d.getMonth() !== month) return sum;
+      const dk = getDateKey(d);
+      return sum + ((data[dk]||{}).reuniones || 0);
+    }, 0);
+
+    const daysHtml = wdays.map(d => {
+      const inMonth = d.getMonth() === month;
+      const dk = getDateKey(d);
+      const entry = data[dk] || { contactos: 0, reuniones: 0 };
+      const c = entry.contactos || 0;
+      const r = entry.reuniones || 0;
+      const isFuture = d > today;
+      const isToday = dk === todayKey;
+      const pct = Math.min(100, Math.round((c / 100) * 100));
+      let cardClass = 'day-card';
+      if (!inMonth) cardClass += ' future';
+      else if (isFuture) cardClass += ' future';
+      if (isToday) cardClass += ' today';
+      if (inMonth && c >= 100) cardClass += ' day-goal-ok';
+      else if (inMonth && c >= 70) cardClass += ' day-goal-close';
+
+      return `<div class="${cardClass}">
+        <div class="day-ring-wrap">
+          <div>
+            <div class="day-name">${dayNames[d.getDay()]}</div>
+            <div class="day-date">${d.getDate()}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="day-count-big">${inMonth&&!isFuture ? c : '—'}</div>
+            <div class="day-count-goal">/100</div>
+          </div>
+        </div>
+        ${inMonth && !isFuture ? `
+        <div class="day-progress"><div class="day-progress-fill" style="width:${pct}%;background:${c>=100?'var(--green)':c>=70?'var(--yellow)':'var(--accent)'}"></div></div>
+        <div class="day-inputs">
+          <div class="day-input-row">
+            <label>✉️ Contactos:</label>
+            <input type="number" min="0" value="${c}" onchange="saveHistEntry('${dk}','contactos',this.value)" style="background:var(--surface3);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+          </div>
+          <div class="day-input-row">
+            <label>📅 Reuniones:</label>
+            <input type="number" min="0" value="${r}" onchange="saveHistEntry('${dk}','reuniones',this.value)" style="background:var(--surface3);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+          </div>
+        </div>
+        ${r > 0 ? `<div class="reunion-badge">🗓 ${r} ${r===1?'reunión':'reuniones'}</div>` : ''}
+        ` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="week-block">
+      <div class="week-header">
+        <div class="week-title">Semana ${wi+1}</div>
+        <div class="week-stats">
+          <div class="week-stat">✉️ <strong>${weekContactos}</strong> contactos</div>
+          <div class="week-stat">📅 <strong>${weekReuniones}</strong> reuniones</div>
+          <div class="week-stat" style="color:${weekContactos>=700?'var(--green)':weekContactos>=490?'var(--yellow)':'var(--text3)'}">
+            ${Math.round((weekContactos/700)*100)}% meta
+          </div>
+        </div>
+      </div>
+      <div class="week-body">
+        <div class="days-grid">${daysHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+load();
+// Seed sample data if empty
+if (!leads.length) {
+  const sampleLeads = [
+    { id: uid(), nombre: 'Total Therapy - San Isidro', negocio: 'Clínica de fisioterapia', web: 'https://totaltherapyclinic.com/', numero: '(01) 3998000', correo: 'citas@totaltherapysa.com', estado: 'Contactado', fechaAccion: todayStr(), notas: [{fecha:'19/05/2026 09:30', text:'Nos dieron el número de ad. Pero no contestaron y ya habían publicado en redes.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'Fisiathlon - Sede Ejército', negocio: 'Clínica de fisioterapia', web: 'https://fisiathlon.com/', numero: '987 701 937', correo: 'fisiathlonperu@gmail.com', estado: 'Contactado', fechaAccion: '', notas: [{fecha:'19/05/2026 10:00', text:'El encargado mkt Bryan Ramon (923347129) sigue sin contestar.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'FisioRenova Perú', negocio: 'Clínica de fisioterapia', web: 'http://www.renovaperu.com.pe/', numero: '998 345 918', correo: '', estado: 'En seguimiento', fechaAccion: new Date(Date.now()+2*86400000).toISOString().slice(0,10), notas: [{fecha:'18/05/2026 11:00', text:'Luis Alberto no responde, reintentar mañana.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'NOPAIN Fisioterapia', negocio: 'Clínica de fisioterapia', web: 'https://www.nopain.com.pe/', numero: '976 953 717', correo: '', estado: 'Frío', fechaAccion: '', notas: [], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'Power Health Fisioterapia', negocio: 'Clínica de fisioterapia', web: '', numero: '907 995 842', correo: '', estado: 'En seguimiento', fechaAccion: new Date(Date.now()-1*86400000).toISOString().slice(0,10), notas: [{fecha:'17/05/2026 14:00', text:'Emilia la secretaria le llamamos a las 2 y ya le mandamos el pitch.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'IPC Centro de Salud Integral', negocio: 'Clínica de fisioterapia', web: 'http://www.ipcsalud.com/', numero: '(01) 4801243', correo: 'contacto@ipcsalud.com', estado: 'En seguimiento', fechaAccion: new Date(Date.now()+1*86400000).toISOString().slice(0,10), notas: [{fecha:'18/05/2026 16:30', text:'Ya hablamos con Irena, agendamos una reunión para la próxima semana.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'Alt Health Center', negocio: 'Profesional de medicina', web: '', numero: '922 807 033', correo: '', estado: 'No califica', fechaAccion: '', notas: [{fecha:'18/05/2026 10:00', text:'Enrique me dice que le pasara con el dieño, le explica y no le interesa.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+    { id: uid(), nombre: 'QuiroCare Centro Quiropráctico', negocio: 'Quiropráctico', web: 'https://linkbe.me/QuiroCarePeru', numero: '978 463 685', correo: '', estado: 'Contactado', fechaAccion: '', notas: [{fecha:'17/05/2026 11:30', text:'No nos contesta, su número está mal.'}], createdAt: todayStr(), updatedAt: todayStr(), custom:{} },
+  ];
+  leads = sampleLeads;
+  save();
+}
+
+renderTable();
+updateDashboard();
+currentMonth = new Date();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
